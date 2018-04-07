@@ -2,7 +2,6 @@ var Botkit = require("botkit");
 var mysql = require('mysql');
 require('date-utils');
 let now = new Date();
-console.log(now.toFormat('M/D/YY'));
 
 var con = mysql.createConnection({
   host     : 'localhost',
@@ -17,6 +16,15 @@ var controller = Botkit.slackbot({
   // include "log: false" to disable logging
   // or a "logLevel" integer from 0 to 7 to adjust logging verbosity
 })
+
+/*
+function search_purpose_id(purpose){
+	var confirm_users = "select * from users where slack_id = ?";
+	con.query(confirm_users,[user_info.id],function(err,res,fields){
+		if(res[0].id == undefined) return bot.reply()
+	});
+}
+*/
 
 controller.spawn({
     token : process.env.token
@@ -63,6 +71,51 @@ controller.hears(["(ユーザ登録)"], ['direct_message'], (bot,message) =>{
 			}
 		});
 	});
+});
+
+//　↓　支出登録の処理
+
+controller.hears(["(支出登録)"], ['direct_message'], (bot,message) =>{
+	var expenditure = message.text.split("\n")[1];
+	var purpose = message.text.split("\n")[2];
+	
+	// ↓ 金額と目的が入力されているかのチェック
+	
+	if(expenditure == undefined || purpose == undefined) bot.reply(message,">2行目:金額\n>3行目:目的");
+	else{
+		//　↓　user_info.idの取得
+		
+		controller.storage.users.get(message.user, function (err, user_info) {
+			if (!user_info) {
+				user_info = {
+					id: message.user,
+				};
+			}	
+			controller.storage.users.save(user_info, function (err, id) {
+			});
+			// ↓ usersからuseridを取得
+			var confirm_users = "select * from users where slack_id = ?";
+			con.query(confirm_users,[user_info.id],function(err,res,fields){
+				if(res[0].id == undefined) return bot.reply(message,"入力した目的がテーブルに登録されてません!");
+				else{
+					
+					// ↓ purposeテーブルからpurpose_idを取得
+		
+					var getPurposeId = "select * from purpose where purpose = ?";
+					con.query(getPurposeId,[purpose],function(err,result){
+						if(result[0].id == undefined) return bot.reply(message,"")
+			
+						// ↓ expenditureテーブルへinsert
+				
+						var registerExpenditure = "insert into expenditure (expenditure,purpose_id,user_id,date) values (?,?,?,?)";
+						con.query(registerExpenditure,[expenditure,result[0].id,res[0].id,now.toFormat('YYYY-MM-DD')],function(err,row){
+							bot.reply(message,"登録完了しました!");
+						});
+					});
+				}
+			});
+		});
+	}
 });
 
 // ↓　その他のメッセージが入力された場合の処理
