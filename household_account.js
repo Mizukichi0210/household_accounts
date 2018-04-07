@@ -50,10 +50,13 @@ controller.hears(["(ユーザ登録)"], ['direct_message'], (bot,message) =>{
 		let confirm_users = "select count(*) as cnt from users where slack_id = ?";
 		con.query(confirm_users,[user_info.id],function(err,result,fields){
 			if(result[0].cnt == 0){
-				let register_users = "insert into users (slack_id,name) values (?,?)";
-				con.query(register_users,[user_info.id,name],function(err,rows,firlds){
-					bot.reply(message,"登録完了!");
-				});
+				if(name == undefined) bot.reply(message,"2行目に名前を書いて!");
+				else{
+					let register_users = "insert into users (slack_id,name) values (?,?)";
+					con.query(register_users,[user_info.id,name],function(err,rows,firlds){
+						bot.reply(message,"登録完了!");
+					});
+				}
 			}
 			else{
 				bot.reply(message,"既に登録されてます～");
