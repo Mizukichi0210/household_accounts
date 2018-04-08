@@ -18,13 +18,12 @@ var controller = Botkit.slackbot({
 })
 
 /*
-function search_purpose_id(purpose){
-	var confirm_users = "select * from users where slack_id = ?";
+function insert_users(slack_id){
+	var insertSql = "";
 	con.query(confirm_users,[user_info.id],function(err,res,fields){
 		if(res[0].id == undefined) return bot.reply()
 	});
-}
-*/
+});*/
 
 controller.spawn({
     token : process.env.token
@@ -96,21 +95,23 @@ controller.hears(["(支出登録)"], ['direct_message'], (bot,message) =>{
 			// ↓ usersからuseridを取得
 			var confirm_users = "select * from users where slack_id = ?";
 			con.query(confirm_users,[user_info.id],function(err,res,fields){
-				if(res[0].id == undefined) return bot.reply(message,"入力した目的がテーブルに登録されてません!");
+				if(res[0].id == undefined) return bot.reply(message,"*ユーザデータが登録されていません!*\nhelpを参照して!");
 				else{
 					
 					// ↓ purposeテーブルからpurpose_idを取得
 		
 					var getPurposeId = "select * from purpose where purpose = ?";
 					con.query(getPurposeId,[purpose],function(err,result){
-						if(result[0].id == undefined) return bot.reply(message,"")
-			
+						if(result[0].id == undefined) return bot.reply(message,"入力した目的がテーブルに登録されてません!")
+						else{
+							
 						// ↓ expenditureテーブルへinsert
 				
-						var registerExpenditure = "insert into expenditure (expenditure,purpose_id,user_id,date) values (?,?,?,?)";
-						con.query(registerExpenditure,[expenditure,result[0].id,res[0].id,now.toFormat('YYYY-MM-DD')],function(err,row){
-							bot.reply(message,"登録完了しました!");
-						});
+							var registerExpenditure = "insert into expenditure (expenditure,purpose_id,user_id,date) values (?,?,?,?)";
+							con.query(registerExpenditure,[expenditure,result[0].id,res[0].id,now.toFormat('YYYY-MM-DD')],function(err,row){
+								bot.reply(message,"登録完了しました!");
+							});
+						}
 					});
 				}
 			});
