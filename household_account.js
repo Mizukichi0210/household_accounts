@@ -195,5 +195,5 @@ controller.hears(["(目的)","(目的確認)","(目的一覧)"],['direct_message
 // ↓　その他のメッセージが入力された場合の処理
 
 controller.hears(["(.*)"], ['direct_message'], (bot,message) =>{
-	bot.reply(message,"help or ヘルプ\nを参照してください");
+	bot.reply(message,"*help or ヘルプ*\nを参照してください");
 });
