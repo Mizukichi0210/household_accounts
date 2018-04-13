@@ -31,6 +31,7 @@ controller.hears(["(help)","(ヘルプ)"], ['direct_message'], (bot,message) =>{
 
 controller.hears(["(ユーザ登録)"], ['direct_message'], (bot,message) =>{
 	var userId;
+	var slackId;
 	var name = message.text.split("\n")[1];
 	
 	//　↓　メッセージからユーザidの取得
@@ -42,25 +43,26 @@ controller.hears(["(ユーザ登録)"], ['direct_message'], (bot,message) =>{
             };
         }	
 		controller.storage.users.save(user_info, function (err, id) {
+			slackId = user_info.id;
 		});
+	});
+	
+	//　↓　テーブルusersに登録されているかの確認。　なければ0、あれば1となる。　0の場合は2行目に入力された名前と一緒にテーブルusersにinsert。
 		
-		//　↓　テーブルusersに登録されているかの確認。　なければ0、あれば1となる。　0の場合は2行目に入力された名前と一緒にテーブルusersにinsert。
-		
-		let confirm_users = "select count(*) as cnt from users where slack_id = ?";
-		con.query(confirm_users,[user_info.id],function(err,result,fields){
-			if(result[0].cnt == 0){
-				if(name == undefined) bot.reply(message,"2行目に名前を書いて!");
-				else{
-					let register_users = "insert into users (slack_id,name) values (?,?)";
-					con.query(register_users,[user_info.id,name],function(err,rows,firlds){
-						bot.reply(message,"登録完了!");
-					});
-				}
-			}
+	let confirm_users = "select count(*) as cnt from users where slack_id = ?";
+	con.query(confirm_users,[slackId],function(err,result,fields){
+		if(result[0].cnt == 0){
+			if(name == undefined) bot.reply(message,"2行目に名前を書いて!");
 			else{
-				bot.reply(message,"既に登録されてます～");
+				let register_users = "insert into users (slack_id,name) values (?,?)";
+				con.query(register_users,[slackId,name],function(err,rows,firlds){
+					bot.reply(message,"登録完了!");
+				});
 			}
-		});
+		}
+		else{
+			bot.reply(message,"既に登録されてます～");
+		}
 	});
 });
 
@@ -69,7 +71,7 @@ controller.hears(["(ユーザ登録)"], ['direct_message'], (bot,message) =>{
 controller.hears(["(支出登録)","(支出記録)","(登録)","(記録)"], ['direct_message'], (bot,message) =>{
 	var expenditure = message.text.split("\n")[1];
 	var purpose = message.text.split("\n")[2];
-	var slack_id;
+	var slackId;
 	
 	// ↓ 金額と目的が入力されているかのチェック
 	
@@ -85,20 +87,22 @@ controller.hears(["(支出登録)","(支出記録)","(登録)","(記録)"], ['di
 					};
 				}
 				controller.storage.users.save(user_info, function (err, id) {
-					slack_id = user_info.id;
+					slackId = user_info.id;
 				});
 			});
 				
-				// ↓ usersからuseridを取得
+			// ↓ usersからuseridを取得
 				
 			var confirm_users = "select *,count(*) as countUsers from users where slack_id = ?";
-			con.query(confirm_users,[slack_id],function(err,res,fields){
+			con.query(confirm_users,[slackId],function(err,res,fields){
 				
 				if(res[0].countUsers == 0){
 					bot.reply(message, "ユーザデータが登録されていません");
 					return;
 				}
-
+				
+				var userId = res[0].id;
+				
 				// ↓ purposeテーブルからpurpose_idを取得
 							
 				var getPurposeId = "select *,count(*) as cnt from purpose where purpose = ?";
@@ -108,11 +112,13 @@ controller.hears(["(支出登録)","(支出記録)","(登録)","(記録)"], ['di
 						bot.reply(message,"目的がテーブルに登録されてません!");
 						return;
 					}
-							
+					
+					var purposeId = result[0].id;
+					
 					// ↓ expenditureテーブルへinsert
 				
 					var registerExpenditure = "insert into expenditure (expenditure,purpose_id,user_id,date) values (?,?,?,?)";
-					con.query(registerExpenditure,[expenditure,result[0].id,res[0].id,now.toFormat('YYYY-MM-DD')],function(err,row){
+					con.query(registerExpenditure,[expenditure,purposeId,userId,now.toFormat('YYYY-MM-DD')],function(err,row){
 						bot.reply(message,"登録完了しました!");
 					});
 				});
@@ -125,7 +131,7 @@ controller.hears(["(支出登録)","(支出記録)","(登録)","(記録)"], ['di
 
 controller.hears(["(支出確認)","(確認)"],['direct_message'],(bot,message)=>{
 	var purpose = message.text.split("\n")[1];
-	var slack_id;
+	var slackId;
 	
 	controller.storage.users.get(message.user, function (err, user_info) {
 		if (!user_info) {
@@ -134,18 +140,20 @@ controller.hears(["(支出確認)","(確認)"],['direct_message'],(bot,message)=
 			};
 		}
 		controller.storage.users.save(user_info, function (err, id) {
-			slack_id = user_info.id;
+			slackId = user_info.id;
 		});
 	});
 	
 	var getUsersId = "select * from users where slack_id = ?";
-	con.query(getUsersId,[slack_id],function(err,result,fields){
+	con.query(getUsersId,[slackId],function(err,result,fields){
 			
+			
+		var userId = result[0].id;
 		// ↓ 目的指定なしの使用金額確認
 			
 		if(purpose == undefined){
 			let getExpenditure = "select purpose_id,sum(expenditure) as exp from expenditure where user_id = ? group by purpose_id";
-			con.query(getExpenditure,[result[0].id],function(err,rows,fields){
+			con.query(getExpenditure,[userId],function(err,rows,fields){
 				for(let i in rows){
 					let getPurpose = "select * from purpose where id = ?";
 					con.query(getPurpose,[rows[i].purpose_id],function(err,res,fields){
