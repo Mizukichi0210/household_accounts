@@ -22,19 +22,6 @@ controller.spawn({
     token : process.env.token
 }).startRTM();
 
-function getUserData(slackId){
-	let confirm_users = "select *,count(*) as cntUsers from users where slack_id = ?";
-	con.query(confirm_users,[slackId],function(err,result,fields){
-		if(result[0].countUsers == 0){
-			bot.reply(message, "ユーザデータが登録されていません");
-			return;
-		}
-		let userTablePk = result[0].id;
-		return Promise.resolve(userTablePk);
-	});
-}
-
-
 // ↓　コマンドの種類表示
 
 controller.hears(["(help)","(ヘルプ)"], ['direct_message'], (bot,message) =>{
@@ -104,18 +91,10 @@ controller.hears(["(支出登録)","(支出記録)","(登録)","(記録)"], ['di
 					slackId = user_info.id;
 				});
 			});
-			
-			getUserData(slackId).then((result)=>{
-				userId = result;
-				console.log(userId);
-			}).catch( err=>{
-				console.log(err);
-			});
-			console.log(userId);
 				
 			// ↓ usersからuseridを取得
 				
-			/*var confirm_users = "select *,count(*) as countUsers from users where slack_id = ?";
+			var confirm_users = "select *,count(*) as countUsers from users where slack_id = ?";
 			con.query(confirm_users,[slack_id],function(err,res,fields){
 				
 				if(res[0].countUsers == 0){
@@ -140,7 +119,7 @@ controller.hears(["(支出登録)","(支出記録)","(登録)","(記録)"], ['di
 						bot.reply(message,"登録完了しました!");
 					});
 				});
-			});*/
+			});
 		}
 	}
 });
