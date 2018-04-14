@@ -1,3 +1,4 @@
+'use strict';
 var Botkit = require("botkit");
 var mysql = require('mysql');
 require('date-utils');
