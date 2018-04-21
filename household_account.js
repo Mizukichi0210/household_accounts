@@ -73,6 +73,7 @@ controller.hears(["(支出登録)","(支出記録)","(登録)","(記録)"], ['di
 	var expenditure = message.text.split("\n")[1];
 	var purpose = message.text.split("\n")[2];
 	var slackId;
+	let now = new Date();
 	
 	// ↓ 金額と目的が入力されているかのチェック
 	
