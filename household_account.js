@@ -1,8 +1,9 @@
 'use strict';
 var Botkit = require("botkit");
 var mysql = require('mysql');
+//var Promise = require('promise');
 require('date-utils');
-let now = new Date();
+var now = new Date();
 
 var con = mysql.createConnection({
   host     : 'localhost',
@@ -25,10 +26,11 @@ controller.spawn({
 // ↓　コマンドの種類表示
 
 controller.hears(["(help)","(ヘルプ)"], ['direct_message'], (bot,message) =>{
-	bot.reply(message,">支出記録 or 支出登録 or 登録 or 記録\n支出金額\n目的\n>支出確認 or 確認\n目的\n>ユーザ登録\n名前\n>目的 or 目的確認 or 目的一覧\n>help or ヘルプ");
+	bot.reply(message,">支出記録 or 支出登録 or 登録 or 記録\n支出金額\n目的\n>支出確認 or 確認\n目的\n>ユーザ登録\n名前\n>目的 or 目的確認 or 目的一覧\n>残高追加\nおろした金額\n>help or ヘルプ");
 });
 
 // ↓　ユーザ登録の処理
+
 
 controller.hears(["(ユーザ登録)"], ['direct_message'], (bot,message) =>{
 	var userId;
@@ -73,7 +75,11 @@ controller.hears(["(支出登録)","(支出記録)","(登録)","(記録)"], ['di
 	var expenditure = message.text.split("\n")[1];
 	var purpose = message.text.split("\n")[2];
 	var slackId;
+<<<<<<< HEAD
 	let now = new Date();
+=======
+	var userId;
+>>>>>>> work_space
 	
 	// ↓ 金額と目的が入力されているかのチェック
 	
@@ -190,6 +196,39 @@ controller.hears(["(支出確認)","(確認)"],['direct_message'],(bot,message)=
 		}
 	});
 });
+
+// 財布の残高追加
+
+controller.hears(["(残高追加)"],['direct_message'],(bot,message) => {
+
+	var slackId;
+	var balance = message.text.split("\n")[1];
+	
+	controller.storage.users.get(message.user, function (err, user_info) {
+		if (!user_info) {
+			user_info = {
+				id: message.user,
+			};
+		}
+		controller.storage.users.save(user_info, function (err, id) {
+			slack_id = user_info.id;
+		});
+	});
+	
+	var getUsersId = "select *,count(*) as userCnt from users where slack_id = ?";
+	con.query(getUsersId,[slack_id],function(err,result,fields){
+		if(userCnt == 0){
+			return;
+		}
+		var inputBalance = "insert into balance (user_id,balance) values(?,?)";
+		con.query(inputBalance,[slackId,balance],function(err,rows,fields{
+			bot.reply(message,"登録しました！");
+		});
+	});
+
+)};
+
+
 
 // ↓　目的一覧表示
 
