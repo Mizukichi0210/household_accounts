@@ -1,0 +1,27 @@
+{
+  "name": "household",
+  "version": "1.0.0",
+  "description": "",
+  "main": "household_account.js",
+  "dependencies": {
+    "botkit": "^0.6.12",
+    "date-utils": "^1.2.21",
+    "mysql": "^2.15.0",
+    "promise": "^8.0.1",
+    "sleep-async": "^1.0.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mizukichi0210/household_accounts.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Mizukichi0210/household_accounts/issues"
+  },
+  "homepage": "https://github.com/Mizukichi0210/household_accounts#readme"
+}
