@@ -75,11 +75,11 @@ controller.hears(["(支出登録)","(支出記録)","(登録)","(記録)"], ['di
 	var expenditure = message.text.split("\n")[1];
 	var purpose = message.text.split("\n")[2];
 	var slackId;
-<<<<<<< HEAD
+
 	let now = new Date();
-=======
+
 	var userId;
->>>>>>> work_space
+
 	
 	// ↓ 金額と目的が入力されているかのチェック
 	
@@ -140,6 +140,23 @@ controller.hears(["(支出登録)","(支出記録)","(登録)","(記録)"], ['di
 controller.hears(["(支出確認)","(確認)"],['direct_message'],(bot,message)=>{
 	var purpose = message.text.split("\n")[1];
 	var slackId;
+	let now = new Date();
+	let month = now.toFormat('M');
+	if(month < 10){
+		month = "0" + month;
+	}
+	
+	if(nextMonth < 10){
+		nextMonth = "0" + nextMonth;
+	}
+	
+	let thisMonthTimeStamp = year + "-" + month + "-" + "01";
+	if(month === 12){
+		nextMonth = "01";
+		year += 1;
+	}
+
+	let nextMonthTimeStamp = year + "-" + nextMonth + "-" + "01";
 	
 	controller.storage.users.get(message.user, function (err, user_info) {
 		if (!user_info) {
@@ -158,10 +175,12 @@ controller.hears(["(支出確認)","(確認)"],['direct_message'],(bot,message)=
 			
 		var userId = result[0].id;
 		// ↓ 目的指定なしの使用金額確認
+		console.log(thisMonthTimeStamp);
+		console.log(nextMonthTimeStamp);
 			
 		if(purpose == undefined){
-			let getExpenditure = "select purpose_id,sum(expenditure) as exp from expenditure where user_id = ? group by purpose_id";
-			con.query(getExpenditure,[userId],function(err,rows,fields){
+			let getExpenditure = "select purpose_id,sum(expenditure) as exp from expenditure where user_id = ? and date >= ? and date < ? group by purpose_id";
+			con.query(getExpenditure,[userId,thisMonthTimeStamp,nextMonthTimeStamp],function(err,rows,fields){
 				for(let i in rows){
 					let getPurpose = "select * from purpose where id = ?";
 					con.query(getPurpose,[rows[i].purpose_id],function(err,res,fields){
@@ -221,12 +240,12 @@ controller.hears(["(残高追加)"],['direct_message'],(bot,message) => {
 			return;
 		}
 		var inputBalance = "insert into balance (user_id,balance) values(?,?)";
-		con.query(inputBalance,[slackId,balance],function(err,rows,fields{
+		con.query(inputBalance,[slackId,balance],function(err,rows,fields) {
 			bot.reply(message,"登録しました！");
 		});
 	});
 
-)};
+});
 
 
 
