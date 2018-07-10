@@ -144,50 +144,48 @@ controller.hears(["(支出確認)","(確認)"],['direct_message'],(bot,message)=
 			slackId = user_info.id;
 		});
 	});
-	
-	var getUsersId = "select * from users where slack_id = ?";
-	con.query(getUsersId,[slackId],function(err,result,fields){
 			
+	var getUserId = async() => await confirmUsers(slackId);
+	var userId;
+	getUserId().then((id) => userId = id);
+	console.log(userId);
+	// ↓ 目的指定なしの使用金額確認
 			
-		var userId = result[0].id;
-		// ↓ 目的指定なしの使用金額確認
+	if(purpose == undefined){
+		let getExpenditure = "select purpose_id,sum(expenditure) as exp from expenditure where user_id = ? group by purpose_id";
+		con.query(getExpenditure,[userId],function(err,rows,fields){
+			for(let i in rows){
+				let getPurpose = "select * from purpose where id = ?";
+				con.query(getPurpose,[rows[i].purpose_id],function(err,res,fields){
+					bot.reply(message,res[0].purpose + " : *" + rows[i].exp + "* 円\n");
+				});
+			}
+		});
+	}
 			
-		if(purpose == undefined){
-			let getExpenditure = "select purpose_id,sum(expenditure) as exp from expenditure where user_id = ? group by purpose_id";
-			con.query(getExpenditure,[userId],function(err,rows,fields){
-				for(let i in rows){
-					let getPurpose = "select * from purpose where id = ?";
-					con.query(getPurpose,[rows[i].purpose_id],function(err,res,fields){
-						bot.reply(message,res[0].purpose + " : *" + rows[i].exp + "* 円\n");
-					});
-				}
-			});
-		}
+	// ↓ 目的指定ありの使用金額確認
 			
-		// ↓ 目的指定ありの使用金額確認
-			
-		else{
-			let getPurposeId = "select *,count(*) as cntPurpose from purpose where purpose = ?";
-			con.query(getPurposeId,[purpose],function(err,rows,fields){
+	else{
+		let getPurposeId = "select *,count(*) as cntPurpose from purpose where purpose = ?";
+		con.query(getPurposeId,[purpose],function(err,rows,fields){
 				
-				// ↓ 目的がテーブルに登録されていた場合
+			// ↓ 目的がテーブルに登録されていた場合
 					
-				if(rows[0].cntPurpose != 0){
-					let getExpenditure = "select *,count(*) as cnt,sum(expenditure) as exp from expenditure where user_id = ? and purpose_id = ?";
-					con.query(getExpenditure,[result[0].id,rows[0].id],function(err,res,fields){
-						if(res[0].cnt != 0) bot.reply(message,"*" + res[0].exp + "* 円");
-						else bot.reply(message,"*0* 円");
-					});
-				}
+			if(rows[0].cntPurpose != 0){
+				let getExpenditure = "select *,count(*) as cnt,sum(expenditure) as exp from expenditure where user_id = ? and purpose_id = ?";
+				con.query(getExpenditure,[result[0].id,rows[0].id],function(err,res,fields){
+					if(res[0].cnt != 0) bot.reply(message,"*" + res[0].exp + "* 円");
+					else bot.reply(message,"*0* 円");
+				});
+			}
 				
-				// ↓　目的がテーブルに登録されていなかった場合
+			// ↓　目的がテーブルに登録されていなかった場合
 				
-				else{
-					bot.reply(message,"*0* 円");
-				}
-			});
-		}
-	});
+			else{
+				bot.reply(message,"*0* 円");
+			}
+		});
+	}
 });
 
 // ↓　目的一覧表示
@@ -206,3 +204,27 @@ controller.hears(["(目的)","(目的確認)","(目的一覧)"],['direct_message
 controller.hears(["(.*)"], ['direct_message'], (bot,message) =>{
 	bot.reply(message,"*help or ヘルプ*\nを参照してください");
 });
+
+/**
+ユーザ登録がなされているかの確認
+
+@param userId 入力を行ったユーザのID
+
+@return 0 -> 未登録<br>
+	それ以外 -> 登録済み
+*/
+var confirmUsers = (userId) => new Promise((resolve,reject) =>{
+	
+	var getUsersId = "select *,cnt(*) as cnt from users where slack_id = ?";
+	con.query(getUsersId,[slackId],function(err,result,fields){
+		var userId = result[0].cnt;
+		if(userId === 0){
+			return 0;
+		}
+		userId = result[0].id;
+		console.log(userId);
+		return userId;
+	});
+	
+});
+	
